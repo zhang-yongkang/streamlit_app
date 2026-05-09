@@ -51,11 +51,23 @@ if prompt:
         {"role": "system", "content":system_prompt},
         *st.session_state.messages,
     ],
-    stream=False,
+    stream=True,
     reasoning_effort="high",
     extra_body={"thinking": {"type": "enabled"}}
     )
 
-    st.chat_message("assistant").write(response.choices[0].message.content)
+    #输出大模型返回的结果（非流式输出的解析方式）
+    # st.chat_message("assistant").write(response.choices[0].message.content)
+    
+    #输出大模型返回的结果（流式输出的解析方式）
+    response_message = st.empty()
+    full_response = ""
+    for chunk in response:
+        if chunk.choices[0].delta.content is not None:
+            content = chunk.choices[0].delta.content
+            full_response += content
+            response_message.chat_message("assistant").write(full_response)
+    
+    
     #保存大模型返回的结果
     st.session_state.messages.append({"role": "assistant", "content": response.choices[0].message.content})
