@@ -41,7 +41,7 @@ client = OpenAI(api_key=os.getenv("DEEPSEEK_API_KEY"),base_url=os.getenv("DEEPSE
 prompt = st.chat_input("请输入你的问题")
 if prompt:
     st.chat_message("user").write(prompt)
-    st.session_state.message.append({"role": "user", "content": prompt})
+    st.session_state.messages.append({"role": "user", "content": prompt})
 
 
     #调用大模型
