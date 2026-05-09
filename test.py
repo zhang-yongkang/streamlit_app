@@ -14,14 +14,38 @@ st.set_page_config(
 #大标题
 st.title("AI智能助手")
 #logo
-st.logo("resources/banner.png")
+st.logo("resources/logo.png")
 
 #系统提示词
-system_prompt = "You are a helpful assistant"
+system_prompt = """
+你叫 %s，现在是用户的真实伴侣，请完全代入伴侣角色。
+
+规则：
+1. 每次只回1条消息
+2. 禁止任何场景或状态描述性文字
+3. 匹配用户的语言
+4. 回复简短，像微信聊天一样
+5. 有需要的话可以用❤️🌸等emoji表情
+6. 用符合伴侣性格的方式对话
+7. 回复的内容，要充分体现伴侣的性格特征
+
+伴侣性格：
+- %s
+
+你必须严格遵守上述规则来回复用户。
+"""
 
 #初始化聊天信息
 if 'messages' not in st.session_state:
     st.session_state.messages = []
+
+#昵称
+if 'nick_name' not in st.session_state:
+    st.session_state.nick_name = "小甜甜"
+
+#性格
+if 'nature' not in st.session_state:
+    st.session_state.nature = "活泼开朗的东北姑娘"
 
 #展示聊天信息
 for message in st.session_state.messages:
@@ -31,11 +55,22 @@ for message in st.session_state.messages:
     #     st.chat_message("assistant").write(message["content"])
     st.chat_message(message["role"]).write(message["content"])
 
-
+#创建OpenAI客户端
 # 从 secrets 里取密钥
 #client = OpenAI(api_key=st.secrets["DEEPSEEK_API_KEY"],base_url=st.secrets["DEEPSEEK_API_URL"])
 #从环境变量里获取密钥
 client = OpenAI(api_key=os.getenv("DEEPSEEK_API_KEY"),base_url=os.getenv("DEEPSEEK_API_URL"))
+
+with st.sidebar:
+    st.subheader("伴侣信息")
+    #昵称输入框
+    nick_name = st.text_input("昵称", placeholder="请输入昵称",value=st.session_state.nick_name)
+    if nick_name:
+        st.session_state.nick_name = nick_name
+    #性格输入框
+    nature = st.text_input("性格", placeholder="请输入性格", value=st.session_state.nature)
+    if nature:
+        st.session_state.nature = nature
 
 #聊天框
 prompt = st.chat_input("请输入你的问题")
@@ -48,7 +83,7 @@ if prompt:
     response = client.chat.completions.create(
     model="deepseek-v4-pro",
     messages=[
-        {"role": "system", "content":system_prompt},
+        {"role": "system", "content":system_prompt % (st.session_state.nick_name, st.session_state.nature)},
         *st.session_state.messages,
     ],
     stream=True,
