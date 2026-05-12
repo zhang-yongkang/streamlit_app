@@ -110,7 +110,15 @@ for message in st.session_state.messages:
 # 从 secrets 里取密钥
 #client = OpenAI(api_key=st.secrets["DEEPSEEK_API_KEY"],base_url=st.secrets["DEEPSEEK_API_URL"])
 #从环境变量里获取密钥
-client = OpenAI(api_key=os.getenv("DEEPSEEK_API_KEY"),base_url=os.getenv("DEEPSEEK_API_URL"))
+api_key = os.getenv("DEEPSEEK_API_KEY")
+api_base = os.getenv("DEEPSEEK_API_URL")
+
+# 添加API密钥检查
+if not api_key or not api_base:
+    st.error("请设置环境变量 DEEPSEEK_API_KEY 和 DEEPSEEK_API_URL")
+    st.stop()
+
+client = OpenAI(api_key=api_key, base_url=api_base)
 
 #侧边栏
 with st.sidebar:
