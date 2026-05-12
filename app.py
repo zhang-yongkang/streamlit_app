@@ -54,6 +54,17 @@ def load_session(session_name):
     except Exception as e:
         st.error(f"加载会话失败：{e}")
 
+#删除会话信息函数
+def delete_session(session_name):
+    try: 
+        if os.path.exists(f"sessions/{session_name}.json"):
+            os.remove(f"sessions/{session_name}.json")
+            #如果删除的是当前会话，则需要更新消息列表
+            if session_name == st.session_state.current_session:
+                st.session_state.messages = []
+                st.session_state.current_session = generate_session_name()
+    except Exception as e:
+        st.error(f"删除会话失败：{e}")
 
 
 #大标题
@@ -144,9 +155,11 @@ with st.sidebar:
         with col1:
             if st.button(session, width="stretch",icon="📄",key=f"load_{session}",type="primary" if session == st.session_state.current_session else "secondary"):
                 load_session(session)
+                st.rerun()
         with col2:
             if st.batton("",width="stretch",icon="❌️",key=f"delete_{session}"):
-                pass
+                delete_session(session)
+                st.rerun()
                
 
 
