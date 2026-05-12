@@ -31,15 +31,6 @@ def save_session():
 def generate_session_name():
     return datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
 
-#加载所有的会话信息
-def load_sessions():
-    session_list = []
-    if os.path.exists("sessions"):
-        for filename in os.listdir("sessions"):
-            if filename.endswith(".json"):
-                session_list.append(filename[:-5])
-    return session_list
-
 
 #大标题
 st.title("AI智能助手")
@@ -84,6 +75,7 @@ if 'current_session' not in st.session_state:
     
 
 #展示聊天信息
+st.text(f"会话名称：{st.session_state.current_session}")
 for message in st.session_state.messages:
     # if message["role"] == "user":
     #     st.chat_message("user").write(message["content"])
@@ -95,15 +87,7 @@ for message in st.session_state.messages:
 # 从 secrets 里取密钥
 #client = OpenAI(api_key=st.secrets["DEEPSEEK_API_KEY"],base_url=st.secrets["DEEPSEEK_API_URL"])
 #从环境变量里获取密钥
-api_key = os.getenv("DEEPSEEK_API_KEY")
-api_base = os.getenv("DEEPSEEK_API_URL")
-
-# 添加API密钥检查
-if not api_key or not api_base:
-    st.error("请设置环境变量 DEEPSEEK_API_KEY 和 DEEPSEEK_API_URL")
-    st.stop()
-
-client = OpenAI(api_key=api_key, base_url=api_base)
+client = OpenAI(api_key=os.getenv("DEEPSEEK_API_KEY"),base_url=os.getenv("DEEPSEEK_API_URL"))
 
 #侧边栏
 with st.sidebar:
@@ -121,18 +105,6 @@ with st.sidebar:
             save_session()
             #重新运行当前页面
             st.rerun()
-    
-    st.text("会话历史")
-    session_list = load_sessions()
-    for session in session_list:
-        col1, col2 = st.columns([4,1])
-        with col1:
-            if st.button(session, width="stretch",icon="📄",key=f"load_{session}"):
-                pass
-        with col2:
-            if st.batton("",width="stretch",icon="❌️",key=f"delete_{session}"):
-                pass
-               
 
 
     st.subheader("伴侣信息")
@@ -152,34 +124,30 @@ if prompt:
     st.session_state.messages.append({"role": "user", "content": prompt})
 
 
-    try:
-        #调用大模型
-        response = client.chat.completions.create(
-        model="deepseek-v4-pro",
-        messages=[
-            {"role": "system", "content":system_prompt % (st.session_state.nick_name, st.session_state.nature)},
-            *st.session_state.messages,
-        ],
-        stream=True,
-        reasoning_effort="high",
-        extra_body={"thinking": {"type": "enabled"}}
-        )
+    #调用大模型
+    response = client.chat.completions.create(
+    model="deepseek-v4-pro",
+    messages=[
+        {"role": "system", "content":system_prompt % (st.session_state.nick_name, st.session_state.nature)},
+        *st.session_state.messages,
+    ],
+    stream=True,
+    reasoning_effort="high",
+    extra_body={"thinking": {"type": "enabled"}}
+    )
 
-        #输出大模型返回的结果（流式输出的解析方式）
-        response_message = st.empty()
-        full_response = ""
-        for chunk in response:
-            if chunk.choices[0].delta.content is not None:
-                content = chunk.choices[0].delta.content
-                full_response += content
-                response_message.chat_message("assistant").write(full_response)
-        
-        
-        #保存大模型返回的结果 - 使用已经构建好的full_response
-        st.session_state.messages.append({"role": "assistant", "content": full_response})
+    #输出大模型返回的结果（非流式输出的解析方式）
+    # st.chat_message("assistant").write(response.choices[0].message.content)
     
-    except Exception as e:
-        st.error(f"API调用失败: {str(e)}")
-        # 添加一些调试信息
-        st.info(f"API Key前缀: {api_key[:8] if api_key else '未设置'}...")
-        st.info(f"API Base URL: {api_base}")
+    #输出大模型返回的结果（流式输出的解析方式）
+    response_message = st.empty()
+    full_response = ""
+    for chunk in response:
+        if chunk.choices[0].delta.content is not None:
+            content = chunk.choices[0].delta.content
+            full_response += content
+            response_message.chat_message("assistant").write(full_response)
+    
+    
+    #保存大模型返回的结果
+    st.session_state.messages.append({"role": "assistant", "content": response.choices[0].message.content})
