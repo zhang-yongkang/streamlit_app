@@ -44,5 +44,5 @@ venv.bak/
 ehthumbs.db
 Thumbs.db
 
-#session
-/sessions
+#聊天会话记录信息
+sessions/
