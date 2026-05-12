@@ -31,6 +31,15 @@ def save_session():
 def generate_session_name():
     return datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
 
+#加载所有的会话信息
+def load_sessions():
+    session_list = []
+    if os.path.exists("sessions"):
+        for filename in os.listdir("sessions"):
+            if filename.endswith(".json"):
+                session_list.append(filename[:-5])
+    return session_list
+
 
 #大标题
 st.title("AI智能助手")
@@ -112,6 +121,18 @@ with st.sidebar:
             save_session()
             #重新运行当前页面
             st.rerun()
+    
+    st.text("会话历史")
+    session_list = load_sessions()
+    for session in session_list:
+        col1, col2 = st.columns([4,1])
+        with col1:
+            if st.button(session, width="stretch",icon="📄",key=f"load_{session}"):
+                pass
+        with col2:
+            if st.batton("",width="stretch",icon="❌️",key=f"delete_{session}"):
+                pass
+               
 
 
     st.subheader("伴侣信息")
